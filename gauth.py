@@ -1,12 +1,14 @@
 import json
-from typing import List
+from typing import List, Union
+import time
 import uuid
 import webbrowser
 
 from httpx import AsyncClient
 from aioconsole import aprint
-from config import GOOGLE_OAUTH_API, GOOGLE_OAUTH_BASE
+from config import *
 from http_util import HttpProxy
+from errors import Exceptions
 
 
 class ClientConfig:
@@ -35,6 +37,7 @@ class Token:
         self.scopes = scopes
 
 class GAuth:
+    # ref https://developers.google.com/identity/protocols/oauth2/web-server#httprest_1
     def __init__(
             self, client_json: str,  code: str='',
             state: str=uuid.uuid4().hex
@@ -46,6 +49,13 @@ class GAuth:
         self.client_config = self.__load_client_config()
         self.state = state
         self.code = code
+        self.http_client = AsyncClient(
+            proxies={
+                'http://': 'socks5://127.0.0.1:1080',
+                'https://': 'socks5://127.0.0.1:1080',
+            }
+        )
+        self.token = None
     
     def __load_client_config(self) -> ClientConfig:
         """_summary_
@@ -97,13 +107,105 @@ class GAuth:
         Returns:
             Token: _description_
         """
-        await HttpProxy.get()
-        pass
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'client_id': self.client_config.client_id,
+            'client_secret': self.client_config.client_secret,
+            'code': self.code,
+            'grant_type': 'authorization_code',
+            'redirect_uri': self.client_config.redirect_uris[0]
+        }
+        err, data = await HttpProxy.post(
+            self.http_client, GOOGLE_OAUTH_TOKEN, headers=headers, data=data
+        )
+        if err == Exceptions.DependencyError:
+            return None
+        
+        res = json.loads(data)
+        self.token = Token(
+            access_token=res.get('access_token'),
+            refresh_token=res.get('refresh_token'),
+            token_type=res.get('token_type'),
+            expires_at=res.get('expires_at'),
+            scopes=res.get('scopes')
+        )
+        return self.token
 
-    async def refresh(self) -> AsyncClient:
+    async def refresh(self) -> Token:
         """nomarlly oauth token will expire in 1 hour, thus need refresh this token
 
         Returns:
-            AsyncClient: _description_
+            Token: _description_
         """
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'client_id': self.client_config.client_id,
+            'client_secret': self.client_config.client_secret,
+            'refresh_token': self.token.refresh_token,
+            'grant_type': 'refresh_token'
+        }
+        err, data = await HttpProxy.post(
+            self.http_client, GOOGLE_OAUTH_TOKEN, headers=headers, data=data
+        )
+        if err == Exceptions.DependencyError:
+            return None
+        
+        res = json.loads(data)
+        self.token = Token(
+            access_token=res.get('access_token'),
+            refresh_token=self.token.refresh_token,
+            token_type=res.get('token_type'),
+            expires_at=time.time() + res.get('expires_in'),
+            scopes=res.get('scopes')
+        )
+        return self.token
+
+class MediaItem:
+    def __init__(self) -> None:
         pass
+class GPhoto:
+    def __init__(self, client: AsyncClient, token: str) -> None:
+        self.http_client = client
+        self.token = token
+
+    async def search_images(self, nextPageToken: str, filters: dict={}) -> Union[str, str, List[MediaItem]]:
+        """_summary_
+
+        Args:
+            nextPageToken (str): _description_
+            filters (dict, optional): _description_. Defaults to {}.
+
+        Returns:
+            Union[str, str, List[MediaItem]]: _description_
+        """
+        headers = {
+            'content-type': 'application/json',
+            'Authorization': f'Bearer {self.token}'
+        }
+        json_data = {
+            'pageSize': 1,
+            'pageToken': nextPageToken,
+            'filters': filters
+        }
+        nextPageToken, mediaItems = '', []
+
+        err, data = await HttpProxy.post(
+            self.http_client, GOOGLE_PHOTO_SEARCH, headers=headers, json=json_data
+        )
+        if err == Exceptions.DependencyError:
+            return err,  nextPageToken, mediaItems
+        
+        res = json.loads(data)
+        await aprint(f'Debug: {res.get("mediaItems")[0]}')
+        await aprint(f'Fuck d d    ')
+        nextPageToken = res.get('nextPageToken')
+        for mi in res.get('mediaItems'):
+            mediaItems.append(MediaItem(
+
+            ))
+
+        return Exceptions.OK, nextPageToken, mediaItems

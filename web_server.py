@@ -1,7 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from aioconsole import aprint
-from gauth import GAuth
+from gauth import GAuth, GPhoto
 
 app = FastAPI()
 
@@ -26,4 +26,26 @@ async def google_photos_manager(state: str, code: str) -> None:
         code (str): _description_
     """
     await aprint(f'Debug: google-photos-manager {state}, {code}')
-    pass
+    auth = GAuth('./client_secret.json', code=code, state=state)
+    token = await auth.get_token()
+    await aprint(f'Debug: token -> {token.access_token}')
+    # refresh_token = await auth.refresh()
+    # await aprint(f'Debug: refreshed token -> {refresh_token.access_token}')
+    filters = {
+        'dateFilter': {
+            'ranges': [{
+                'startDate': {
+                    'year': 2023,
+                    'month': 10,
+                    'day': 1
+                },
+                'endDate': {
+                    'year': 2023,
+                    'month': 10,
+                    'day': 31
+                }
+            }]
+        }
+    }
+    photo = GPhoto(auth.http_client, auth.token.access_token)
+    await photo.search_images('', filters)
