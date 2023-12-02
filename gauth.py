@@ -4,7 +4,8 @@ import time
 import uuid
 import webbrowser
 
-from httpx import AsyncClient
+import aiohttp
+from aiohttp_socks import ProxyConnector
 from aioconsole import aprint
 from config import *
 from http_util import HttpProxy
@@ -25,11 +26,9 @@ class GAuth:
         self.client_config = self.__load_client_config()
         self.state = state
         self.code = code
-        self.http_client = AsyncClient(
-            proxies={
-                'http://': 'socks5://127.0.0.1:1080',
-                'https://': 'socks5://127.0.0.1:1080',
-            }
+
+        self.http_client = aiohttp.ClientSession(
+            connector=ProxyConnector.from_url('socks5://127.0.0.1:1080')
         )
         self.token = None
     
@@ -141,7 +140,7 @@ class GAuth:
         return self.token
 
 class GPhoto:
-    def __init__(self, client: AsyncClient, token: str) -> None:
+    def __init__(self, client: aiohttp.ClientSession, token: str) -> None:
         self.http_client = client
         self.token = token
 
@@ -216,7 +215,7 @@ class GPhoto:
         Returns:
             Union[str, bytes]: _description_
         """
-        headers = {"Connection": "close"}
+        # headers = {"Connection": "close"}
         return await HttpProxy.get(
-            self.http_client, url, headers=headers, timeout=32
+            self.http_client, url, headers={}
         )
