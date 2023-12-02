@@ -42,7 +42,7 @@ async def google_photos_manager(state: str, code: str) -> None:
                 'endDate': {
                     'year': 2023,
                     'month': 10,
-                    'day': 31
+                    'day': 3
                 }
             }]
         }
@@ -54,6 +54,19 @@ async def google_photos_manager(state: str, code: str) -> None:
         await aprint(f'Debug search-images result: {err} {nextPageToken}')
         for mi in mediaItems:
             await aprint(mi)
+
+            if 'video' in mi.mime_type:
+                url = f'{mi.base_url}=dv'
+            else:
+                url = mi.base_url
+            err, data = await photo.download(url)
+            if err:
+                await aprint(f'Error download: {err} {mi.base_url}')
+                break
+            else:
+                await aprint(f'Downloaded {mi.filename} {len(data)}')
+                break
+
         if not nextPageToken:
             break
 

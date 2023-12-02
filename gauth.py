@@ -320,3 +320,20 @@ class GPhoto:
             ))
 
         return Exceptions.OK, nextPageToken, mediaItems
+
+    async def download(self, url: str) -> Union[str, bytes]:
+        """download image/video from google
+
+        Args:
+            url (str): _description_
+
+        Returns:
+            Union[str, bytes]: _description_
+        """
+        err, data = await HttpProxy.get(
+            self.http_client, url, headers={}
+        )
+        if err == Exceptions.DependencyError:
+            return err, ""
+        
+        return Exceptions.OK, data
