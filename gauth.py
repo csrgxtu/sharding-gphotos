@@ -330,10 +330,6 @@ class GPhoto:
         Returns:
             Union[str, bytes]: _description_
         """
-        err, data = await HttpProxy.get(
-            self.http_client, url, headers={}
+        return await HttpProxy.get(
+            self.http_client, url, headers={}, timeout=32
         )
-        if err == Exceptions.DependencyError:
-            return err, ""
-        
-        return Exceptions.OK, data

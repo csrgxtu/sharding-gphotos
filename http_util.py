@@ -24,18 +24,20 @@ class HttpProxy:
         return Exceptions.DependencyError, ""
 
     @classmethod
-    async def get(cls, client: AsyncClient, url: str, headers: dict) -> Union[str, bytes]:
+    async def get(cls, client: AsyncClient, url: str, headers: dict, timeout: int) -> Union[str, bytes]:
         """_summary_
 
         Args:
             client (AsyncClient): _description_
             url (str): _description_
             headers (dict): _description_
+            timeout (int): _description_
+
 
         Returns:
             Union[str, bytes]: _description_
         """
-        res = await client.get(url, headers=headers, follow_redirects=True)
+        res = await client.get(url, headers=headers, follow_redirects=True, timeout=timeout)
         await aprint(f'GET {url[0:32]}... with Headers->{headers} {res.status_code} {res.content[0:32]}...')
         if res.status_code == 200:
             return Exceptions.OK, res.content
