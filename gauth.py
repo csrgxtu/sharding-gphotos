@@ -25,6 +25,14 @@ class ClientConfig:
         self.client_secret = client_secret
         self.redirect_uris = redirect_uris
 
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
+
 class Token:
     def __init__(
             self, access_token: str, refresh_token: str, token_type: str,
@@ -35,6 +43,14 @@ class Token:
         self.expire_at = expires_at
         self.token_type = token_type
         self.scopes = scopes
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
 
 class GAuth:
     # ref https://developers.google.com/identity/protocols/oauth2/web-server#httprest_1
@@ -164,9 +180,64 @@ class GAuth:
         )
         return self.token
 
+class MediaMetaDataPhoto:
+    def __init__(
+            self, camera_make: str, camera_model: str, focal_length: float,
+            aperture_fnumber: float, iso_equivalent: int, exposure_time: str 
+    ) -> None:
+        self.camera_make = camera_make
+        self.camera_model = camera_model
+        self.focal_length = focal_length
+        self.aperture_fnumber = aperture_fnumber
+        self.iso_equivalent = iso_equivalent
+        self.exposure_time = exposure_time
+    
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
+
+class MediaMetaData:
+    def __init__(
+            self, create_time: str, width: str, height: str,
+            photo: MediaMetaDataPhoto
+    ) -> None:
+        self.create_time = create_time
+        self.width = width
+        self.height = height
+        self.photo = photo
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
+
 class MediaItem:
-    def __init__(self) -> None:
-        pass
+    def __init__(
+            self, media_id: str, product_url: str, base_url: str,
+            mime_type: str, media_meta_data: MediaMetaData, filename: str
+    ) -> None:
+        self.media_id = media_id
+        self.product_url = product_url
+        self.base_url = base_url
+        self.mime_type = mime_type
+        self.media_meta_data = media_meta_data
+        self.filename = filename
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
+
 class GPhoto:
     def __init__(self, client: AsyncClient, token: str) -> None:
         self.http_client = client
@@ -201,11 +272,27 @@ class GPhoto:
         
         res = json.loads(data)
         await aprint(f'Debug: {res.get("mediaItems")[0]}')
-        await aprint(f'Fuck d d    ')
         nextPageToken = res.get('nextPageToken')
         for mi in res.get('mediaItems'):
             mediaItems.append(MediaItem(
-
+                media_id=mi.get('id'),
+                product_url=mi.get('productUrl'),
+                base_url=mi.get('baseUrl'),
+                mime_type=mi.get('mimeType'),
+                filename=mi.get('filename'),
+                media_meta_data=MediaMetaData(
+                    create_time=mi.get('mediaMetadata').get('creationTime'),
+                    width=mi.get('mediaMetadata').get('width'),
+                    height=mi.get('mediaMetadata').get('height'),
+                    photo=MediaMetaDataPhoto(
+                        camera_make=mi.get('mediaMetadata').get('photo').get('cameraMake'),
+                        camera_model=mi.get('mediaMetadata').get('photo').get('cameraModel'),
+                        focal_length=mi.get('mediaMetadata').get('photo').get('focalLength'),
+                        aperture_fnumber=mi.get('mediaMetadata').get('photo').get('apertureFNumber'),
+                        iso_equivalent=mi.get('mediaMetadata').get('photo').get('isoEquivalent'),
+                        exposure_time=mi.get('mediaMetadata').get('photo').get('exposureTime')
+                    )
+                )
             ))
 
         return Exceptions.OK, nextPageToken, mediaItems
