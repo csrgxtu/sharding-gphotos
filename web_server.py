@@ -42,7 +42,7 @@ async def google_photos_manager(state: str, code: str) -> None:
                 'endDate': {
                     'year': 2023,
                     'month': 10,
-                    'day': 3
+                    'day': 31
                 }
             }]
         }

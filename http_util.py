@@ -1,4 +1,5 @@
 from typing import Union
+import time
 from httpx import AsyncClient
 from aioconsole import aprint
 from errors import Exceptions
@@ -16,8 +17,9 @@ class HttpProxy:
         Returns:
             Union[str, bytes]: _description_
         """
+        ts = int(time.time() * 1000)
         res = await client.post(url, headers=headers, data=data, json=json)
-        await aprint(f'POST {url} with Headers->{headers} data->{data} json->{json} {res.status_code} {res.content[0:32]}...')
+        await aprint(f'POST {url} with {headers} {data} {json} -> {int(time.time() * 1000) - ts}ms {res.status_code} {res.content[0:32]}...')
         if res.status_code == 200:
             return Exceptions.OK, res.content
 
@@ -37,8 +39,9 @@ class HttpProxy:
         Returns:
             Union[str, bytes]: _description_
         """
+        ts = int(time.time() * 1000)
         res = await client.get(url, headers=headers, follow_redirects=True, timeout=timeout)
-        await aprint(f'GET {url[0:32]}... with Headers->{headers} {res.status_code} {res.content[0:32]}...')
+        await aprint(f'GET {url[0:32]}... with {headers} -> {int(time.time() * 1000) - ts}ms {res.status_code} {res.content[0:32]}...')
         if res.status_code == 200:
             return Exceptions.OK, res.content
 

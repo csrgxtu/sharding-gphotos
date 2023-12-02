@@ -330,6 +330,7 @@ class GPhoto:
         Returns:
             Union[str, bytes]: _description_
         """
+        headers = {'Accept-Encoding': 'identity'}
         return await HttpProxy.get(
-            self.http_client, url, headers={}, timeout=32
+            self.http_client, url, headers=headers, timeout=32
         )
