@@ -48,7 +48,12 @@ async def google_photos_manager(state: str, code: str) -> None:
         }
     }
     photo = GPhoto(auth.http_client, auth.token.access_token)
-    err, nextPageToken, mediaItems = await photo.search_images('', filters)
-    await aprint(f'Debug search-images result: {err} {nextPageToken}')
-    for mi in mediaItems:
-        await aprint(mi)
+    nextPageToken = ''
+    while True:
+        err, nextPageToken, mediaItems = await photo.search_images(nextPageToken, filters)
+        await aprint(f'Debug search-images result: {err} {nextPageToken}')
+        for mi in mediaItems:
+            await aprint(mi)
+        if not nextPageToken:
+            break
+

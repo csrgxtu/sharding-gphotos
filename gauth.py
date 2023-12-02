@@ -200,15 +200,31 @@ class MediaMetaDataPhoto:
             indent=4
         )
 
+class MediaMetaDataVideo:
+    def __init__(
+            self, fps: int, status: str
+    ) -> None:
+        self.fps = fps
+        self.status = status
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
+
 class MediaMetaData:
     def __init__(
             self, create_time: str, width: str, height: str,
-            photo: MediaMetaDataPhoto
+            photo: MediaMetaDataPhoto=None, video: MediaMetaDataVideo=None
     ) -> None:
         self.create_time = create_time
         self.width = width
         self.height = height
         self.photo = photo
+        self.video = video
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -258,7 +274,7 @@ class GPhoto:
             'Authorization': f'Bearer {self.token}'
         }
         json_data = {
-            'pageSize': 1,
+            'pageSize': 16,
             'pageToken': nextPageToken,
             'filters': filters
         }
@@ -271,9 +287,23 @@ class GPhoto:
             return err,  nextPageToken, mediaItems
         
         res = json.loads(data)
-        await aprint(f'Debug: {res.get("mediaItems")[0]}')
         nextPageToken = res.get('nextPageToken')
         for mi in res.get('mediaItems'):
+            photo, video = None, None
+            if 'video' in mi.get('mimeType'):
+                video = MediaMetaDataVideo(
+                    fps=mi.get('mediaMetadata').get('video').get('fps'),
+                    status=mi.get('mediaMetadata').get('video').get('status')
+                )
+            else:
+                photo = MediaMetaDataPhoto(
+                    camera_make=mi.get('mediaMetadata').get('photo').get('cameraMake'),
+                    camera_model=mi.get('mediaMetadata').get('photo').get('cameraModel'),
+                    focal_length=mi.get('mediaMetadata').get('photo').get('focalLength'),
+                    aperture_fnumber=mi.get('mediaMetadata').get('photo').get('apertureFNumber'),
+                    iso_equivalent=mi.get('mediaMetadata').get('photo').get('isoEquivalent'),
+                    exposure_time=mi.get('mediaMetadata').get('photo').get('exposureTime')
+                )
             mediaItems.append(MediaItem(
                 media_id=mi.get('id'),
                 product_url=mi.get('productUrl'),
@@ -284,14 +314,8 @@ class GPhoto:
                     create_time=mi.get('mediaMetadata').get('creationTime'),
                     width=mi.get('mediaMetadata').get('width'),
                     height=mi.get('mediaMetadata').get('height'),
-                    photo=MediaMetaDataPhoto(
-                        camera_make=mi.get('mediaMetadata').get('photo').get('cameraMake'),
-                        camera_model=mi.get('mediaMetadata').get('photo').get('cameraModel'),
-                        focal_length=mi.get('mediaMetadata').get('photo').get('focalLength'),
-                        aperture_fnumber=mi.get('mediaMetadata').get('photo').get('apertureFNumber'),
-                        iso_equivalent=mi.get('mediaMetadata').get('photo').get('isoEquivalent'),
-                        exposure_time=mi.get('mediaMetadata').get('photo').get('exposureTime')
-                    )
+                    photo=photo,
+                    video=video
                 )
             ))
 
