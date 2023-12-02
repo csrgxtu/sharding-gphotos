@@ -65,7 +65,6 @@ async def google_photos_manager(state: str, code: str) -> None:
             err, data = await photo.download(url)
             if err:
                 await aprint(f'Error download: {err} {url}')
-                break
             else:
                 await aprint(f'Downloaded {mi.filename} {len(data)}')
                 with open(f'/Users/minyakonga/Downloads/gphotos/{mi.filename}', 'wb') as f:

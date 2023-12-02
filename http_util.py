@@ -1,6 +1,7 @@
 from typing import Union
 import time
 from httpx import AsyncClient
+from httpx import HTTPError
 from aioconsole import aprint
 from errors import Exceptions
 
@@ -44,5 +45,4 @@ class HttpProxy:
         await aprint(f'GET {url[0:32]}... with {headers} -> {int(time.time() * 1000) - ts}ms {res.status_code} {res.content[0:32]}...')
         if res.status_code == 200:
             return Exceptions.OK, res.content
-
         return Exceptions.DependencyError, ""
