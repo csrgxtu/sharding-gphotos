@@ -55,17 +55,21 @@ async def google_photos_manager(state: str, code: str) -> None:
         for mi in mediaItems:
             await aprint(mi)
 
+            url = mi.base_url
             if 'video' in mi.mime_type:
-                url = f'{mi.base_url}=dv'
+                url = f'{url}=dv'
             else:
-                url = mi.base_url
+                # original size with all the Exif metadata except the location metadata
+                url = f'{url}=w{mi.media_meta_data.width}-h{mi.media_meta_data.height}-d'
+            
             err, data = await photo.download(url)
             if err:
-                await aprint(f'Error download: {err} {mi.base_url}')
+                await aprint(f'Error download: {err} {url}')
                 break
             else:
                 await aprint(f'Downloaded {mi.filename} {len(data)}')
-                break
+                with open(f'/Users/minyakonga/Downloads/gphotos/{mi.filename}', 'wb') as f:
+                    f.write(data)
 
         if not nextPageToken:
             break

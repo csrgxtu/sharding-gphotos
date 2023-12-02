@@ -17,7 +17,7 @@ class HttpProxy:
             Union[str, bytes]: _description_
         """
         res = await client.post(url, headers=headers, data=data, json=json)
-        await aprint(f'POST {url} with Headers->{headers} data->{data} json->{json} {res.status_code} {res.content}')
+        await aprint(f'POST {url} with Headers->{headers} data->{data} json->{json} {res.status_code} {res.content[0:32]}...')
         if res.status_code == 200:
             return Exceptions.OK, res.content
 
@@ -35,8 +35,8 @@ class HttpProxy:
         Returns:
             Union[str, bytes]: _description_
         """
-        res = await client.get(url, headers=headers)
-        await aprint(f'GET {url} with Headers->{headers} {res.status_code} {res.content[0:32]}...')
+        res = await client.get(url, headers=headers, follow_redirects=True)
+        await aprint(f'GET {url[0:32]}... with Headers->{headers} {res.status_code} {res.content[0:32]}...')
         if res.status_code == 200:
             return Exceptions.OK, res.content
 
