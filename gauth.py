@@ -21,7 +21,8 @@ class GAuth:
         ) -> None:
         self.client_json = client_json
         self.scopes = [
-            'https://www.googleapis.com/auth/photoslibrary.readonly'
+            'https://www.googleapis.com/auth/photoslibrary.readonly',
+            'https://www.googleapis.com/auth/userinfo.email'
         ]
         self.client_config = self.__load_client_config()
         self.state = state
@@ -72,9 +73,30 @@ class GAuth:
             str: _description_
         """
         auth_url = await self.__generate_auth_url()
-        webbrowser.open(auth_url, new=0, autoraise=True)
         await aprint('Please finish the oauth2.0 verification in the browser')
         return auth_url
+
+    async def get_user_info(self) -> GmailUserInfo:
+        """get user basic info
+
+        Returns:
+            GmailUserInfo: _description_
+        """
+        headers = {}
+        url = GOOGLE_USER_INFO.format(access_token=self.token.access_token)
+        err, data = await HttpProxy.get(
+            self.http_client, url, headers=headers
+        )
+        if err == Exceptions.DependencyError:
+            return None
+        
+        res = json.loads(data)
+        return GmailUserInfo(
+            email=res.get('email'),
+            pic=res.get('picture'),
+            verified=res.get('verified_email'),
+            uid=res.get('id')
+        )
 
     async def get_token(self) -> Token:
         """_summary_

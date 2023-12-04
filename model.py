@@ -117,3 +117,18 @@ class MediaItem:
             sort_keys=True,
             indent=4
         )
+
+class GmailUserInfo:
+    def __init__(self, email: str, pic: str, verified: bool, uid: str) -> None:
+        self.email = email
+        self.pic = pic
+        self.verified = verified
+        self.uid = uid
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4
+        )
